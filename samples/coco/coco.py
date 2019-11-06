@@ -335,6 +335,7 @@ def build_coco_results(dataset, image_ids, rois, class_ids, scores, masks):
                 "score": score,
                 "segmentation": maskUtils.encode(np.asfortranarray(mask))
             }
+            print(result)
             results.append(result)
     return results
 
