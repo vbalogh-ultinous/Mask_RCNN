@@ -22,14 +22,13 @@ if not os.path.exists(COCO_MODEL_PATH):
 COCO_DIR = "/data/vbalogh/coco"
 # IMAGE_DIR = os.path.join(ROOT_DIR, "images")
 # SAMPLE_IMAGE_DIR = os.path.join(ROOT_DIR, "data", "head_crops_sample")
-BATCH_SIZE=2
+# BATCH_SIZE=2
 
 class InferenceConfig(coco.CocoConfig):
     # Set batch size to 1 since we'll be running inference on
     # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
     GPU_COUNT = 1
-    IMAGES_PER_GPU = BATCH_SIZE
-
+    IMAGES_PER_GPU = args.batchsize
 
 
 def chunker(seq, size):
@@ -92,6 +91,8 @@ def parseArgs(argv=None):
                         help='Path to directory containing images', required=True)
     parser.add_argument('--outdir', type=str,
                         help='Path to output directory', required=True)
+    parser.add_argument('--batchsize', default=2, type=int,
+                        help='Path to output directory', required=False)
 
     global args
     args = parser.parse_args(argv)
