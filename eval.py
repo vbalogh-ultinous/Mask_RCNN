@@ -24,13 +24,6 @@ COCO_DIR = "/data/vbalogh/coco"
 # SAMPLE_IMAGE_DIR = os.path.join(ROOT_DIR, "data", "head_crops_sample")
 # BATCH_SIZE=2
 
-class InferenceConfig(coco.CocoConfig):
-    # Set batch size to 1 since we'll be running inference on
-    # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
-    GPU_COUNT = 1
-    IMAGES_PER_GPU = args.batchsize
-
-
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
 
@@ -96,6 +89,13 @@ def parseArgs(argv=None):
 
     global args
     args = parser.parse_args(argv)
+
+class InferenceConfig(coco.CocoConfig):
+    # Set batch size to 1 since we'll be running inference on
+    # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
+    GPU_COUNT = 1
+    IMAGES_PER_GPU = args.batchsize
+
 
 if __name__ == '__main__':
     parseArgs()
