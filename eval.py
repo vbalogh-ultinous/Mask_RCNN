@@ -93,15 +93,17 @@ def parseArgs(argv=None):
 class InferenceConfig(coco.CocoConfig):
     # Set batch size to 1 since we'll be running inference on
     # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
-    GPU_COUNT = 1
-    IMAGES_PER_GPU = args.batchsize
+    def __init__(self, batchsize):
+        IMAGES_PER_GPU = batchsize
+        GPU_COUNT = 1
+
 
 
 if __name__ == '__main__':
     parseArgs()
 
     # Initialize config
-    config = InferenceConfig()
+    config = InferenceConfig(args.batchsize)
     config.display()
 
     # Load weights
