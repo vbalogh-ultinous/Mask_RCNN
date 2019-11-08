@@ -181,7 +181,7 @@ def finalizeMetrics(cummulated_metrics):
     metrics['matched_object_ratio'] = cummulated_metrics['matched_object_ratio']/float(count)
     return metrics
 
-def Align(head_file, person_dir, image_dir, out_dir, metrics_file):
+def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name):
     # heads = open(head_file, 'r').readlines()
     # heads.extend(open(HEAD_bb_path_2, 'r').readlines())
     print('Reading in files')
@@ -203,6 +203,7 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file):
             cv2.imwrite(os.path.join(OUT_DIR, img_filename), image)
             computeMetrics(C, indices, head_bbs, person_bbs, cummulated_metrics)
     metrics = finalizeMetrics(cummulated_metrics)
+    metrics['name'] = name
     with open(metrics_file, 'w+') as f:
         json.dump(metrics, f)
     print(metrics)
@@ -221,6 +222,8 @@ def parseArgs(argv=None):
                         help='Path to output image directory', required=True)
     parser.add_argument('--metrics', default='metrics.json', type=str,
                         help='Path to output metrics file', required=False)
+    parser.add_argument('--name', type=str,
+                        help='Path to output metrics file', required=True)
 
     global args
     args = parser.parse_args(argv)
