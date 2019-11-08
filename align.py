@@ -158,20 +158,20 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
     if len(aligned_indices[0]) > 0:
         cost = - C[aligned_indices[0], aligned_indices[1]].sum() / float(len(aligned_indices[0]))
 
-    heads = len(head_bbs)
-    mismatched_heads = len(getMismatchedIndices(head_bbs, aligned_indices[0]))
-    matched_head_ratio = (heads - mismatched_heads) / heads
-    people = len(person_bbs)
-    mismatched_people = len(getMismatchedIndices(person_bbs, aligned_indices[1]))
-    matched_person_ratio = (people - mismatched_people) / people
-    matched_objects_ratio = len(aligned_indices[0])/ float(len(aligned_indices[0]) + mismatched_people + mismatched_heads)
+        heads = len(head_bbs)
+        mismatched_heads = len(getMismatchedIndices(head_bbs, aligned_indices[0]))
+        matched_head_ratio = (heads - mismatched_heads) / heads
+        people = len(person_bbs)
+        mismatched_people = len(getMismatchedIndices(person_bbs, aligned_indices[1]))
+        matched_person_ratio = (people - mismatched_people) / people
+        matched_objects_ratio = len(aligned_indices[0])/ float(len(aligned_indices[0]) + mismatched_people + mismatched_heads)
 
-    cummulated_metrics['count'] += 1
-    cummulated_metrics['cost'] += cost
-    cummulated_metrics['matched_head_ratio'] += matched_head_ratio
-    cummulated_metrics['matched_person_ratio'] += matched_person_ratio
-    cummulated_metrics['matched_object_ratio'] += matched_objects_ratio
-    print(cost, matched_head_ratio, matched_person_ratio, matched_objects_ratio)
+        cummulated_metrics['count'] += 1
+        cummulated_metrics['cost'] += cost
+        cummulated_metrics['matched_head_ratio'] += matched_head_ratio
+        cummulated_metrics['matched_person_ratio'] += matched_person_ratio
+        cummulated_metrics['matched_object_ratio'] += matched_objects_ratio
+        print(cost, matched_head_ratio, matched_person_ratio, matched_objects_ratio)
 
 def finalizeMetrics(cummulated_metrics):
     metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0}
