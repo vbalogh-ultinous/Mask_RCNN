@@ -22,7 +22,7 @@ if not os.path.exists(COCO_MODEL_PATH):
 COCO_DIR = "/data/vbalogh/coco"
 # IMAGE_DIR = os.path.join(ROOT_DIR, "images")
 # SAMPLE_IMAGE_DIR = os.path.join(ROOT_DIR, "data", "head_crops_sample")
-# BATCH_SIZE=2
+BATCH_SIZE=1
 
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
@@ -40,7 +40,7 @@ def formatOutName(image_name):
 
 def objectDet(image_dir, out_dir):
     batch_size = config.BATCH_SIZE
-    image_names = os.listdir(image_dir)[0:30]
+    image_names = os.listdir(image_dir)
     for image_group in chunker(image_names, batch_size):
         images = getImages(image_dir, image_group)
         diff = batch_size - len(images)
@@ -84,8 +84,8 @@ def parseArgs(argv=None):
                         help='Path to directory containing images', required=True)
     parser.add_argument('--outdir', type=str,
                         help='Path to output directory', required=True)
-    parser.add_argument('--batchsize', default=2, type=int,
-                        help='Path to output directory', required=False)
+    # parser.add_argument('--batchsize', default=2, type=int,
+    #                     help='Path to output directory', required=False)
 
     global args
     args = parser.parse_args(argv)
@@ -93,9 +93,9 @@ def parseArgs(argv=None):
 class InferenceConfig(coco.CocoConfig):
     # Set batch size to 1 since we'll be running inference on
     # one image at a time. Batch size = GPU_COUNT * IMAGES_PER_GPU
-    def __init__(self, batchsize):
-        IMAGES_PER_GPU = batchsize
-        GPU_COUNT = 1
+
+    IMAGES_PER_GPU = BATCH_SIZE
+    GPU_COUNT = 1
 
 
 
@@ -103,7 +103,7 @@ if __name__ == '__main__':
     parseArgs()
 
     # Initialize config
-    config = InferenceConfig(args.batchsize)
+    config = InferenceConfig()
     config.display()
 
     # Load weights
