@@ -154,7 +154,9 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
         if C[row_ind, col_ind] >= 0:
             (aligned_indices[0].tolist()).remove(row_ind)
             (aligned_indices[1].tolist()).remove(col_ind)
-    cost = - C[aligned_indices[0], aligned_indices[1]].sum()/float(len(aligned_indices[0]))
+    cost = 0.0
+    if len(aligned_indices[0]) > 0:
+        cost = - C[aligned_indices[0], aligned_indices[1]].sum() / float(len(aligned_indices[0]))
 
     heads = len(head_bbs)
     mismatched_heads = len(getMismatchedIndices(head_bbs, aligned_indices[0]))
