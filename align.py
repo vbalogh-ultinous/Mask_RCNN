@@ -204,7 +204,7 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name):
             computeMetrics(C, indices, head_bbs, person_bbs, cummulated_metrics)
     metrics = finalizeMetrics(cummulated_metrics)
     metrics['name'] = name
-    with open(metrics_file, 'w+') as f:
+    with open(metrics_file, 'a+') as f:
         json.dump(metrics, f)
     print(metrics)
 
