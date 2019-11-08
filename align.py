@@ -162,7 +162,7 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
     people = len(person_bbs)
     mismatched_people = len(getMismatchedIndices(person_bbs, aligned_indices[1]))
     matched_person_ratio = (people - mismatched_people) / people
-    matched_objects_ratio = aligned_indices[0] / float(len(aligned_indices[0]) + mismatched_people + mismatched_heads)
+    matched_objects_ratio = len(aligned_indices[0])/ float(len(aligned_indices[0]) + mismatched_people + mismatched_heads)
 
     cummulated_metrics['count'] += 1
     cummulated_metrics['cost'] += cost
