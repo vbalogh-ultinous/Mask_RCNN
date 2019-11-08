@@ -124,7 +124,7 @@ def getPersonBoundingBoxes(person_dir, filename):
     if 'detections' in json_data.keys():
         detections = json_data['detections']
     person_bbs = [det['bbox'] for det in detections if det['class'] == 'person']
-    person_bbs = [person_bbs[1], person_bbs[0], person_bbs[3], person_bbs[2]]
+    person_bbs = [[person_bb[1], person_bb[0], person_bb[3], person_bb[2]] for person_bb in person_bbs]
     return person_bbs
 
 def getHeadBoundingBoxes(head_file, person_dir, filename):
