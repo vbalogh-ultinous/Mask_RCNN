@@ -205,6 +205,7 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name):
     metrics = finalizeMetrics(cummulated_metrics)
     metrics['name'] = name
     with open(metrics_file, 'a+') as f:
+        f.write('\n')
         json.dump(metrics, f)
     print(metrics)
 
