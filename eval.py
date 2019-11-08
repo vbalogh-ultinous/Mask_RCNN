@@ -22,7 +22,7 @@ if not os.path.exists(COCO_MODEL_PATH):
 COCO_DIR = "/data/vbalogh/coco"
 # IMAGE_DIR = os.path.join(ROOT_DIR, "images")
 # SAMPLE_IMAGE_DIR = os.path.join(ROOT_DIR, "data", "head_crops_sample")
-BATCH_SIZE=1
+BATCH_SIZE=10
 
 def chunker(seq, size):
     return (seq[pos:pos + size] for pos in range(0, len(seq), size))
