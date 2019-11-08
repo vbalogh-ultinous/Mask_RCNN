@@ -181,7 +181,7 @@ def finalizeMetrics(cummulated_metrics):
     metrics['matched_object_ratio'] = cummulated_metrics['matched_object_ratio']/float(count)
     return metrics
 
-def Align(head_file, person_dir, image_dir, out_dir):
+def Align(head_file, person_dir, image_dir, out_dir, metrics_file):
     # heads = open(head_file, 'r').readlines()
     # heads.extend(open(HEAD_bb_path_2, 'r').readlines())
     print('Reading in files')
@@ -203,6 +203,8 @@ def Align(head_file, person_dir, image_dir, out_dir):
             cv2.imwrite(os.path.join(OUT_DIR, img_filename), image)
             computeMetrics(C, indices, head_bbs, person_bbs, cummulated_metrics)
     metrics = finalizeMetrics(cummulated_metrics)
+    with open(metrics_file, 'w+') as f:
+        json.dump(metrics, f)
     print(metrics)
 
 def parseArgs(argv=None):
@@ -210,13 +212,15 @@ def parseArgs(argv=None):
         description='(MaskRCNN) body-head aligner')
     parser.add_argument('--head',
                         default='results/head_bounding_boxes/train_v3.csv', type=str,
-                        help='Path to annotated head bounding boxes csv file', required=False)
+                        help='Path to annotated head bounding boxes csv file', required=True)
     parser.add_argument('--person', default='results/person_bounding_boxes/film8', type=str,
-                        help='Path to (yolact) directory containing person bounding boxes jsons', required=False)
+                        help='Path to (yolact) directory containing person bounding boxes jsons', required=True)
     parser.add_argument('--images', default='data/head_det_corpus_v3/film8', type=str,
-                        help='Path to directory containing raw images', required=False)
+                        help='Path to directory containing raw images', required=True)
     parser.add_argument('--outdir', default=None, type=str,
-                        help='Path to output directory', required=False)
+                        help='Path to output image directory', required=True)
+    parser.add_argument('--metrics', default='metrics.json', type=str,
+                        help='Path to output metrics file', required=False)
 
     global args
     args = parser.parse_args(argv)
@@ -228,5 +232,5 @@ if __name__ == '__main__':
     PERSON_DIR = args.person
     IMAGE_DIR = args.images
     OUT_DIR = makeOutDir(PERSON_DIR, args.outdir)
-
-    Align(HEAD_FILE, PERSON_DIR, IMAGE_DIR, OUT_DIR)
+    METRICS_FILE = args.metrics
+    Align(HEAD_FILE, PERSON_DIR, IMAGE_DIR, OUT_DIR, METRICS_FILE)
