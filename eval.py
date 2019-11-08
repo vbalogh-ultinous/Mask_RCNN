@@ -61,7 +61,8 @@ def objectDet(image_dir, out_dir):
             image_path = os.path.join(image_name, image_name)
             for j in range(len(class_ids)): # jth detection
                 json_det = {}
-                json_det['bbox'] = [int(x) for x in bboxes[j]]
+                bbox = [int(x) for x in bboxes[j]]
+                json_det['bbox'] = [bbox[1], bbox[0], bbox[3], bbox[2]]
                 json_det['score'] = float(scores[j])
                 json_det['class'] = class_names[int(class_ids[j])]
                 json_dets.append(json_det)
