@@ -236,4 +236,5 @@ if __name__ == '__main__':
     IMAGE_DIR = args.images
     OUT_DIR = makeOutDir(PERSON_DIR, args.outdir)
     METRICS_FILE = args.metrics
-    Align(HEAD_FILE, PERSON_DIR, IMAGE_DIR, OUT_DIR, METRICS_FILE)
+    NAME = args.name
+    Align(HEAD_FILE, PERSON_DIR, IMAGE_DIR, OUT_DIR, METRICS_FILE, NAME)
