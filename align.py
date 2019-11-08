@@ -147,10 +147,45 @@ def computeAlginments(head_bbs, person_bbs):
         indices = linear_sum_assignment(C)
     return indices, C
 
+def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics):
+    # remove indices from matched indices that have 0 cost, since they are not a real match
+    pair_indices = [(ind1, ind2) for ind1, ind2 in zip(aligned_indices[0], aligned_indices[1])]
+    for (row_ind, col_ind) in pair_indices:
+        if C[row_ind, col_ind] >= 0:
+            (aligned_indices[0].tolist()).remove(row_ind)
+            (aligned_indices[1].tolist()).remove(col_ind)
+    cost = - C[aligned_indices[0], aligned_indices[1]].sum()
+
+    heads = len(head_bbs)
+    mismatched_heads = len(getMismatchedIndices(head_bbs, aligned_indices[0]))
+    matched_head_ratio = (heads - mismatched_heads) / heads
+    people = len(person_bbs)
+    mismatched_people = len(getMismatchedIndices(person_bbs, aligned_indices[1]))
+    matched_person_ratio = (people - mismatched_people) / people
+    matched_objects_ratio = aligned_indices[0] / float(aligned_indices[0] + mismatched_people + mismatched_heads)
+
+    cummulated_metrics['count'] += 1
+    cummulated_metrics['cost'] += cost
+    cummulated_metrics['matched_head_ratio'] += matched_head_ratio
+    cummulated_metrics['matched_person_ratio'] += matched_person_ratio
+    cummulated_metrics['matched_object_ratio'] += matched_objects_ratio
+    print(cost, matched_head_ratio, matched_person_ratio, matched_objects_ratio)
+
+def finalizeMetrics(cummulated_metrics):
+    metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0}
+    count = cummulated_metrics['count']
+    metrics['count'] = count
+    metrics['cost'] = cummulated_metrics['cost']/float(count)
+    metrics['matched_head_ratio'] = cummulated_metrics['matched_head_ratio']/float(count)
+    metrics['matched_person_ratio'] = cummulated_metrics['matched_person_ratio']/float(count)
+    metrics['matched_object_ratio'] = cummulated_metrics['matched_object_ratio']/float(count)
+    return metrics
+
 def Align(head_file, person_dir, image_dir, out_dir):
     # heads = open(head_file, 'r').readlines()
     # heads.extend(open(HEAD_bb_path_2, 'r').readlines())
     print('Reading in files')
+    cummulated_metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0}
     for filename in os.listdir(person_dir):
         if filename.find('.json') != -1:
             person_bbs = getPersonBoundingBoxes(person_dir, filename)
@@ -164,8 +199,11 @@ def Align(head_file, person_dir, image_dir, out_dir):
             img_filename = '.'.join((filename.strip().split('.'))[0:-1]) + img_format
             image = cv2.imread(os.path.join(image_dir, img_filename))
             drawRectangles(indices, C,  head_bbs, person_bbs, image)
-            print('image saved to ', os.path.join(out_dir, img_filename))
+            print(img_filename, ' --> ', os.path.join(out_dir, img_filename))
             cv2.imwrite(os.path.join(OUT_DIR, img_filename), image)
+            computeMetrics(C, indices, head_bbs, person_bbs, cummulated_metrics)
+    metrics = finalizeMetrics(cummulated_metrics)
+    print(metrics)
 
 def parseArgs(argv=None):
     parser = argparse.ArgumentParser(
