@@ -203,6 +203,7 @@ def finalizeMetrics(cummulated_metrics):
     count = cummulated_metrics['count']
     metrics['count'] = count
     metrics['cost'] = cummulated_metrics['cost']/float(count)
+    metrics['match_ratio'] = cummulated_metrics['match_ratio']/float(count)
     metrics['matched_head_ratio'] = cummulated_metrics['matched_head_ratio']/float(count)
     metrics['matched_person_ratio'] = cummulated_metrics['matched_person_ratio']/float(count)
     metrics['matched_object_ratio'] = cummulated_metrics['matched_object_ratio']/float(count)
