@@ -118,13 +118,14 @@ def drawRectangles(indices, C, head_bbs, person_bbs, image):
         cv2.rectangle(image, (person_bbs[i][0], person_bbs[i][1]), (person_bbs[i][2], person_bbs[i][3]),
                       (0, 255, 0), 1)
 
-def getPersonBoundingBoxes(person_dir, filename):
+def getPersonBoundingBoxes(person_dir, filename, swap):
     json_data = json.load(open(os.path.join(person_dir, filename)))
     detections = []
     if 'detections' in json_data.keys():
         detections = json_data['detections']
     person_bbs = [det['bbox'] for det in detections if det['class'] == 'person']
-    person_bbs = [[person_bb[1], person_bb[0], person_bb[3], person_bb[2]] for person_bb in person_bbs]
+    if swap:
+        person_bbs = [[person_bb[1], person_bb[0], person_bb[3], person_bb[2]] for person_bb in person_bbs]
     return person_bbs
 
 def getHeadBoundingBoxes(head_file, person_dir, filename):
@@ -183,14 +184,14 @@ def finalizeMetrics(cummulated_metrics):
     metrics['matched_object_ratio'] = cummulated_metrics['matched_object_ratio']/float(count)
     return metrics
 
-def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name):
+def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap):
     # heads = open(head_file, 'r').readlines()
     # heads.extend(open(HEAD_bb_path_2, 'r').readlines())
     print('Reading in files')
     cummulated_metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0}
     for filename in os.listdir(person_dir):
         if filename.find('.json') != -1:
-            person_bbs = getPersonBoundingBoxes(person_dir, filename)
+            person_bbs = getPersonBoundingBoxes(person_dir, filename, swap)
             head_bbs = getHeadBoundingBoxes(head_file, person_dir, filename)
             indices, C = computeAlginments(head_bbs, person_bbs)
             img_format = '.png'
@@ -227,7 +228,7 @@ def parseArgs(argv=None):
                         help='Path to output metrics file', required=False)
     parser.add_argument('--name', type=str,
                         help='Path to output metrics file', required=True)
-    parser.add_argument('--swap', type=bool, default=False
+    parser.add_argument('--swap', type=bool, default=False,
                         help='<True|False>, True if person bounding box coordinates should be swapped', required=False)
 
     global args
@@ -242,4 +243,5 @@ if __name__ == '__main__':
     OUT_DIR = makeOutDir(PERSON_DIR, args.outdir)
     METRICS_FILE = args.metrics
     NAME = args.name
-    Align(HEAD_FILE, PERSON_DIR, IMAGE_DIR, OUT_DIR, METRICS_FILE, NAME)
+    SWAP = args.swap
+    Align(HEAD_FILE, PERSON_DIR, IMAGE_DIR, OUT_DIR, METRICS_FILE, NAME, SWAP)
