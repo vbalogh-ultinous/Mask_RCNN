@@ -227,6 +227,8 @@ def parseArgs(argv=None):
                         help='Path to output metrics file', required=False)
     parser.add_argument('--name', type=str,
                         help='Path to output metrics file', required=True)
+    parser.add_argument('--swap', type=bool, default=False
+                        help='<True|False>, True if person bounding box coordinates should be swapped', required=False)
 
     global args
     args = parser.parse_args(argv)
