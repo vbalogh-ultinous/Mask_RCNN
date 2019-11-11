@@ -178,6 +178,7 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
         cummulated_metrics['matched_head_ratio'] += matched_head_ratio
         cummulated_metrics['matched_person_ratio'] += matched_person_ratio
         cummulated_metrics['matched_object_ratio'] += matched_objects_ratio
+        print(cost, matched_head_ratio, matched_person_ratio, matched_objects_ratio)
     else:
         if heads > 0 and people > 0:
             cummulated_metrics['cost'] += 0.0
@@ -199,7 +200,7 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
             cummulated_metrics['matched_person_ratio'] += 0.0
             cummulated_metrics['cost'] += 0.0
             cummulated_metrics['matched_object_ratio'] += 0.0
-    print(cost, matched_head_ratio, matched_person_ratio, matched_objects_ratio)
+
 
 
 def finalizeMetrics(cummulated_metrics):
