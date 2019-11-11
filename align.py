@@ -100,6 +100,7 @@ def drawRectangles(indices, C, head_bbs, person_bbs, image):
     pair_indices = [(ind1, ind2) for ind1, ind2 in zip(indices[0], indices[1])]
     for (row_ind, col_ind) in pair_indices:
         if C[row_ind, col_ind] < 0:
+            print('Matched head: ', row_ind, ', person: ', col_ind)
             # print('Head: ', row_ind, head_bbs[row_ind], '\nPerson: ', col_ind, person_bbs[col_ind])
             color = generateColor()
             cv2.rectangle(image, (head_bbs[row_ind][0], head_bbs[row_ind][1]),
@@ -109,12 +110,15 @@ def drawRectangles(indices, C, head_bbs, person_bbs, image):
                           (person_bbs[col_ind][2], person_bbs[col_ind][3]),
                           color, 1)
         else:
+            print('Removed head: ', row_ind, ', person', col_ind)
             (indices[0].tolist()).remove(row_ind)
             (indices[1].tolist()).remove(col_ind)
     for i in getMismatchedIndices(head_bbs, indices[0]):
+        print('Mismatched head: ', i)
         cv2.rectangle(image, (head_bbs[i][0], head_bbs[i][1]), (head_bbs[i][2], head_bbs[i][3]),
                       (0, 0, 255), 2)
     for i in getMismatchedIndices(person_bbs, indices[1]):
+        print('Mismatched person: ', i)
         cv2.rectangle(image, (person_bbs[i][0], person_bbs[i][1]), (person_bbs[i][2], person_bbs[i][3]),
                       (0, 255, 0), 1)
 
