@@ -132,6 +132,8 @@ def getHeadBoundingBoxes(head_file, person_dir, filename):
     heads = open(head_file, 'r').readlines()
     raw_filename = (person_dir.strip().split('/'))[-1] + '/' + '.'.join((filename.strip().split('.'))[0:-1])
     head_line = [line for line in heads if line.find(raw_filename) != -1]
+    if len(head_line) == 0:
+        return None
     # print(raw_filename, head_line, person_bbs)
     head_bbs = []
     if len(head_line) > 0:  # and len(person_bbs) > 0:
@@ -193,18 +195,19 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap):
         if filename.find('.json') != -1:
             person_bbs = getPersonBoundingBoxes(person_dir, filename, swap)
             head_bbs = getHeadBoundingBoxes(head_file, person_dir, filename)
-            indices, C = computeAlginments(head_bbs, person_bbs)
-            img_format = '.png'
-            if image_dir.find('HollywoodHeads')!=-1:
-                img_format = '.jpeg'
-            elif image_dir.find('MPII')!=-1:
-                img_format = '.jpg'
-            img_filename = '.'.join((filename.strip().split('.'))[0:-1]) + img_format
-            image = cv2.imread(os.path.join(image_dir, img_filename))
-            drawRectangles(indices, C,  head_bbs, person_bbs, image)
-            print(img_filename, ' --> ', os.path.join(out_dir, img_filename))
-            cv2.imwrite(os.path.join(OUT_DIR, img_filename), image)
-            computeMetrics(C, indices, head_bbs, person_bbs, cummulated_metrics)
+            if head_bbs != None:
+                indices, C = computeAlginments(head_bbs, person_bbs)
+                img_format = '.png'
+                if image_dir.find('HollywoodHeads')!=-1:
+                    img_format = '.jpeg'
+                elif image_dir.find('MPII')!=-1:
+                    img_format = '.jpg'
+                img_filename = '.'.join((filename.strip().split('.'))[0:-1]) + img_format
+                image = cv2.imread(os.path.join(image_dir, img_filename))
+                drawRectangles(indices, C,  head_bbs, person_bbs, image)
+                print(img_filename, ' --> ', os.path.join(out_dir, img_filename))
+                cv2.imwrite(os.path.join(OUT_DIR, img_filename), image)
+                computeMetrics(C, indices, head_bbs, person_bbs, cummulated_metrics)
     metrics = finalizeMetrics(cummulated_metrics)
     metrics['name'] = name
     with open(metrics_file, 'a+') as f:
