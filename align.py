@@ -158,23 +158,45 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
             (aligned_indices[0].tolist()).remove(row_ind)
             (aligned_indices[1].tolist()).remove(col_ind)
 
+    mismatched_heads = len(getMismatchedIndices(head_bbs, aligned_indices[0]))
+    mismatched_people = len(getMismatchedIndices(person_bbs, aligned_indices[1]))
+    heads = len(head_bbs)
+    people = len(person_bbs)
+    cummulated_metrics['count'] += 1
     if len(aligned_indices[0]) > 0:
         cost = - C[aligned_indices[0], aligned_indices[1]].sum() / float(len(aligned_indices[0]))
-
-        heads = len(head_bbs)
-        mismatched_heads = len(getMismatchedIndices(head_bbs, aligned_indices[0]))
         matched_head_ratio = (heads - mismatched_heads) / heads
-        people = len(person_bbs)
-        mismatched_people = len(getMismatchedIndices(person_bbs, aligned_indices[1]))
         matched_person_ratio = (people - mismatched_people) / people
         matched_objects_ratio = len(aligned_indices[0])/ float(len(aligned_indices[0]) + mismatched_people + mismatched_heads)
 
-        cummulated_metrics['count'] += 1
+        cummulated_metrics['match_ratio'] += len(aligned_indices[0])
         cummulated_metrics['cost'] += cost
         cummulated_metrics['matched_head_ratio'] += matched_head_ratio
         cummulated_metrics['matched_person_ratio'] += matched_person_ratio
         cummulated_metrics['matched_object_ratio'] += matched_objects_ratio
         print(cost, matched_head_ratio, matched_person_ratio, matched_objects_ratio)
+    else:
+        if heads > 0 and people > 0:
+            cummulated_metrics['cost'] += 0.0
+            cummulated_metrics['matched_object_ratio'] += 0.0
+            cummulated_metrics['matched_head_ratio'] += 0.0
+            cummulated_metrics['matched_person_ratio'] += 0.0
+        elif heads == 0 and people == 0:
+            cummulated_metrics['cost'] += 1.0
+            cummulated_metrics['matched_object_ratio'] += 1.0
+            cummulated_metrics['matched_head_ratio'] += 1.0
+            cummulated_metrics['matched_person_ratio'] += 1.0
+        elif heads > 0:
+            cummulated_metrics['matched_head_ratio'] += 0.0
+            cummulated_metrics['matched_person_ratio'] += 1.0
+            cummulated_metrics['cost'] += 0.0
+            cummulated_metrics['matched_object_ratio'] += 0.0
+        elif people > 0:
+            cummulated_metrics['matched_head_ratio'] += 1.0
+            cummulated_metrics['matched_person_ratio'] += 0.0
+            cummulated_metrics['cost'] += 0.0
+            cummulated_metrics['matched_object_ratio'] += 0.0
+
 
 def finalizeMetrics(cummulated_metrics):
     metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0}
@@ -198,9 +220,9 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap):
             if head_bbs != None:
                 indices, C = computeAlginments(head_bbs, person_bbs)
                 img_format = '.png'
-                if image_dir.find('HollywoodHeads')!=-1:
+                if image_dir.find('HollywoodHeads') != -1:
                     img_format = '.jpeg'
-                elif image_dir.find('MPII')!=-1:
+                elif image_dir.find('MPII') != -1:
                     img_format = '.jpg'
                 img_filename = '.'.join((filename.strip().split('.'))[0:-1]) + img_format
                 image = cv2.imread(os.path.join(image_dir, img_filename))
