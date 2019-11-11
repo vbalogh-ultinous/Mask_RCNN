@@ -209,12 +209,14 @@ def finalizeMetrics(cummulated_metrics):
     metrics['matched_object_ratio'] = cummulated_metrics['matched_object_ratio']/float(count)
     return metrics
 
-def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap):
-    # heads = open(head_file, 'r').readlines()
-    # heads.extend(open(HEAD_bb_path_2, 'r').readlines())
+def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, reference):
+    file_names = os.listdir(person_dir)
+    if reference != None:
+        reference_names = set(os.listdir(reference))
+        file_names = [file_name for file_name in file_names if file_name in reference_names]
     print('Reading in files')
     cummulated_metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0, 'match_ratio': 0.0}
-    for filename in os.listdir(person_dir):
+    for filename in file_names:
         if filename.find('.json') != -1:
             person_bbs = getPersonBoundingBoxes(person_dir, filename, swap)
             head_bbs = getHeadBoundingBoxes(head_file, person_dir, filename)
@@ -254,6 +256,8 @@ def parseArgs(argv=None):
                         help='Path to output metrics file', required=False)
     parser.add_argument('--name', type=str,
                         help='Path to output metrics file', required=True)
+    parser.add_argument('--reference', type=str, default=None,
+                        help='Path to directory containing reference files on which detector should be applied.', required=False)
     parser.add_argument('--swap', type=bool, default=False,
                         help='<True|False>, True if person bounding box coordinates should be swapped', required=False)
 
@@ -270,4 +274,5 @@ if __name__ == '__main__':
     METRICS_FILE = args.metrics
     NAME = args.name
     SWAP = args.swap
-    Align(HEAD_FILE, PERSON_DIR, IMAGE_DIR, OUT_DIR, METRICS_FILE, NAME, SWAP)
+    REFERENCE = args.reference
+    Align(HEAD_FILE, PERSON_DIR, IMAGE_DIR, OUT_DIR, METRICS_FILE, NAME, SWAP, REFERENCE)
