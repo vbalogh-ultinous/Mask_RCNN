@@ -114,7 +114,7 @@ def drawRectangles(indices, C, head_bbs, person_bbs, image):
             (indices[0].tolist()).remove(row_ind)
             (indices[1].tolist()).remove(col_ind)
     for i in getMismatchedIndices(head_bbs, indices[0]):
-        print('Mismatched head: ', i, len(head_bbs), head_bbs[i][0], head_bbs[i][1]), (head_bbs[i][2], head_bbs[i][3])
+        print('Mismatched head: ', i, len(head_bbs), 'bb:', head_bbs[i])
         cv2.rectangle(image, (head_bbs[i][0], head_bbs[i][1]), (head_bbs[i][2], head_bbs[i][3]),
                       (0, 0, 255), 2)
     for i in getMismatchedIndices(person_bbs, indices[1]):
@@ -141,10 +141,12 @@ def getHeadBoundingBoxes(head_file, person_dir, filename):
         return None
     # print(raw_filename, head_line, person_bbs)
     head_bbs = []
+
     if len(head_line) > 0:  # and len(person_bbs) > 0:
         head_bbs = (head_line[0].strip().split('\t'))[1:]
         head_bbs = [[int(head_bbs[i]), int(head_bbs[i + 1]), int(head_bbs[i + 2]), int(head_bbs[i + 3])] for i
                     in range(len(head_bbs)) if i % 5 == 0]
+    print('headbbs: ', head_bbs)
     return head_bbs
 
 def computeAlginments(head_bbs, person_bbs):
