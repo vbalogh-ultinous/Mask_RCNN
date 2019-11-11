@@ -114,7 +114,7 @@ def drawRectangles(indices, C, head_bbs, person_bbs, image):
             (indices[0].tolist()).remove(row_ind)
             (indices[1].tolist()).remove(col_ind)
     for i in getMismatchedIndices(head_bbs, indices[0]):
-        print('Mismatched head: ', i, head_bbs[i][0], head_bbs[i][1]), (head_bbs[i][2], head_bbs[i][3])
+        print('Mismatched head: ', i, len(head_bbs), head_bbs[i][0], head_bbs[i][1]), (head_bbs[i][2], head_bbs[i][3])
         cv2.rectangle(image, (head_bbs[i][0], head_bbs[i][1]), (head_bbs[i][2], head_bbs[i][3]),
                       (0, 0, 255), 2)
     for i in getMismatchedIndices(person_bbs, indices[1]):
@@ -135,6 +135,7 @@ def getPersonBoundingBoxes(person_dir, filename, swap):
 def getHeadBoundingBoxes(head_file, person_dir, filename):
     heads = open(head_file, 'r').readlines()
     raw_filename = (person_dir.strip().split('/'))[-1] + '/' + '.'.join((filename.strip().split('.'))[0:-1])
+    print('raw: ', raw_filename)
     head_line = [line for line in heads if line.find(raw_filename) != -1]
     if len(head_line) == 0:
         return None
