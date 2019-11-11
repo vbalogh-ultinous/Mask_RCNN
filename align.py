@@ -114,7 +114,7 @@ def drawRectangles(indices, C, head_bbs, person_bbs, image):
             (indices[0].tolist()).remove(row_ind)
             (indices[1].tolist()).remove(col_ind)
     for i in getMismatchedIndices(head_bbs, indices[0]):
-        print('Mismatched head: ', i)
+        print('Mismatched head: ', i, head_bbs[i][0], head_bbs[i][1]), (head_bbs[i][2], head_bbs[i][3])
         cv2.rectangle(image, (head_bbs[i][0], head_bbs[i][1]), (head_bbs[i][2], head_bbs[i][3]),
                       (0, 0, 255), 2)
     for i in getMismatchedIndices(person_bbs, indices[1]):
@@ -178,7 +178,6 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
         cummulated_metrics['matched_head_ratio'] += matched_head_ratio
         cummulated_metrics['matched_person_ratio'] += matched_person_ratio
         cummulated_metrics['matched_object_ratio'] += matched_objects_ratio
-        print(cost, matched_head_ratio, matched_person_ratio, matched_objects_ratio)
     else:
         if heads > 0 and people > 0:
             cummulated_metrics['cost'] += 0.0
@@ -200,6 +199,7 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
             cummulated_metrics['matched_person_ratio'] += 0.0
             cummulated_metrics['cost'] += 0.0
             cummulated_metrics['matched_object_ratio'] += 0.0
+    print(cost, matched_head_ratio, matched_person_ratio, matched_objects_ratio)
 
 
 def finalizeMetrics(cummulated_metrics):
