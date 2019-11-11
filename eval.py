@@ -30,8 +30,12 @@ def chunker(seq, size):
 def getImages(image_dir, image_group):
     images = []
     for image_name in image_group:
-        image = skimage.io.imread(os.path.join(image_dir, image_name))
-        images.append(image)
+        img_path = os.path.join(image_dir, image_name)
+        if os.path.exists(img_path):
+            image = skimage.io.imread(os.path.join(image_dir, image_name))
+            images.append(image)
+        else:
+            print('image path does not exist', img_path)
     return images
 
 def formatOutName(image_name):
