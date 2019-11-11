@@ -213,7 +213,7 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap):
     # heads = open(head_file, 'r').readlines()
     # heads.extend(open(HEAD_bb_path_2, 'r').readlines())
     print('Reading in files')
-    cummulated_metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0}
+    cummulated_metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0, 'match_ratio': 0.0}
     for filename in os.listdir(person_dir):
         if filename.find('.json') != -1:
             person_bbs = getPersonBoundingBoxes(person_dir, filename, swap)
