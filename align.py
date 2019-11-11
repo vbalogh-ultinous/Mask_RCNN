@@ -218,7 +218,7 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap):
         if filename.find('.json') != -1:
             person_bbs = getPersonBoundingBoxes(person_dir, filename, swap)
             head_bbs = getHeadBoundingBoxes(head_file, person_dir, filename)
-            if head_bbs != None:
+            if head_bbs is not None:
                 indices, C = computeAlginments(head_bbs, person_bbs)
                 img_format = '.png'
                 if image_dir.find('HollywoodHeads') != -1:

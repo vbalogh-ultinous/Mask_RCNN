@@ -36,6 +36,8 @@ def getImages(image_dir, image_group):
             images.append(image)
         else:
             print('image path does not exist', img_path)
+    if len(images) == 0:
+        return None
     return images
 
 def formatOutName(image_name):
@@ -47,40 +49,41 @@ def objectDet(image_dir, out_dir):
     image_names = os.listdir(image_dir)
     for image_group in chunker(image_names, batch_size):
         images = getImages(image_dir, image_group)
-        diff = batch_size - len(images)
-        if diff != 0:
-            for k in range(diff):
-                images.append(images[-1]) # append last image k times
-        results = model.detect(images, verbose=0)
-        assert len(results) == len(images)
+        if images is not None:
+            diff = batch_size - len(images)
+            if diff != 0:
+                for k in range(diff):
+                    images.append(images[-1]) # append last image k times
+            results = model.detect(images, verbose=0)
+            assert len(results) == len(images)
 
-        for i in range((batch_size-diff)): # ith image
-            image_name = image_group[i]
-            json_data = {}
-            result = results[i]
-            json_dets = []
-            class_ids = result['class_ids']
-            bboxes = result['rois']
-            scores = result['scores']
-            image_path = os.path.join(image_name, image_name)
-            for j in range(len(class_ids)): # jth detection
-                json_det = {}
-                bbox = [int(x) for x in bboxes[j]]
-                json_det['bbox'] = [bbox[1], bbox[0], bbox[3], bbox[2]]
-                json_det['score'] = float(scores[j])
-                json_det['class'] = class_names[int(class_ids[j])]
-                json_dets.append(json_det)
-                # print(json_det)
-            json_data['path'] = image_path
-            json_data['detections'] = json_dets
+            for i in range((batch_size-diff)): # ith image
+                image_name = image_group[i]
+                json_data = {}
+                result = results[i]
+                json_dets = []
+                class_ids = result['class_ids']
+                bboxes = result['rois']
+                scores = result['scores']
+                image_path = os.path.join(image_name, image_name)
+                for j in range(len(class_ids)): # jth detection
+                    json_det = {}
+                    bbox = [int(x) for x in bboxes[j]]
+                    json_det['bbox'] = [bbox[1], bbox[0], bbox[3], bbox[2]]
+                    json_det['score'] = float(scores[j])
+                    json_det['class'] = class_names[int(class_ids[j])]
+                    json_dets.append(json_det)
+                    # print(json_det)
+                json_data['path'] = image_path
+                json_data['detections'] = json_dets
 
-            json_out_path = os.path.join(out_dir, formatOutName(image_name))
-            if not os.path.exists(out_dir):
-                os.makedirs(out_dir)
+                json_out_path = os.path.join(out_dir, formatOutName(image_name))
+                if not os.path.exists(out_dir):
+                    os.makedirs(out_dir)
 
-            print("Saving ", image_name, ' --> ', json_out_path)
-            with open(json_out_path, 'w') as f:
-                json.dump(json_data, f)
+                print("Saving ", image_name, ' --> ', json_out_path)
+                with open(json_out_path, 'w') as f:
+                    json.dump(json_data, f)
 
 def parseArgs(argv=None):
     parser = argparse.ArgumentParser(
