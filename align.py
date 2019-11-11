@@ -199,7 +199,7 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
 
 
 def finalizeMetrics(cummulated_metrics):
-    metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0}
+    metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0, 'match_ratio': 0.0}
     count = cummulated_metrics['count']
     metrics['count'] = count
     metrics['cost'] = cummulated_metrics['cost']/float(count)
