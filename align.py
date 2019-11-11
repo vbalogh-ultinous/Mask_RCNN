@@ -134,7 +134,7 @@ def getPersonBoundingBoxes(person_dir, filename, swap):
 
 def getHeadBoundingBoxes(head_file, person_dir, filename):
     heads = open(head_file, 'r').readlines()
-    raw_filename = (person_dir.strip().split('/'))[-1] + '/' + '.'.join((filename.strip().split('.'))[0:-1])
+    raw_filename = (person_dir.strip().split('/'))[-1] + '/' + '.'.join((filename.strip().split('.'))[0:-1]) + '.'
     print('raw: ', raw_filename)
     head_line = [line for line in heads if line.find(raw_filename) != -1]
     if len(head_line) == 0:
