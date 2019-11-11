@@ -31,7 +31,7 @@ def getImages(image_dir, image_group):
     images = []
     for image_name in image_group:
         img_path = os.path.join(image_dir, image_name)
-        if os.path.exists(img_path):
+        if os.path.exists(img_path) and (img_path.find('.jpg') != -1 or img_path.find('.jpeg') != -1 or img_path.find('.png') != -1):
             image = skimage.io.imread(os.path.join(image_dir, image_name))
             images.append(image)
         else:
