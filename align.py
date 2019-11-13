@@ -264,6 +264,7 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, r
     print('heads: ', len(heads))
     print('suffix: ', suffix)
     file_names = [file_name for file_name in file_names if (file_name.strip().split('.'))[0] in heads]
+    print(file_names[0:10])
     if reference != None:
         reference_names = set(os.listdir(reference))
         file_names = [file_name for file_name in file_names if file_name in reference_names]
