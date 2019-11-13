@@ -47,8 +47,10 @@ def formatOutName(image_name):
 def objectDet(image_dir, out_dir, heads):
     batch_size = config.BATCH_SIZE
     image_names = os.listdir(image_dir)
+    format_name = '.' + (image_names[0].strip().split('.'))[-1]
+    print('format: ', format_name)
     already_done = os.listdir(out_dir)
-    already_done = set(['.'.join((name.strip().split('.'))[0:-1]) + '.jpeg' for name in already_done])
+    already_done = set(['.'.join((name.strip().split('.'))[0:-1]) + format_name for name in already_done])
     print('already done: ', len(already_done))
     image_names = [ img_name for img_name in image_names if (img_name in heads and img_name not in already_done)]
     print('images left to detect: ', len(image_names))
