@@ -138,7 +138,8 @@ if __name__ == '__main__':
     out_dir = args.outdir
     head_file = args.head
     heads = open(head_file, 'r').readlines()
-    heads = set([(((h.strip().split('\t'))[0]).split('/'))[-1] for h in heads])
+    heads = [(((h.strip().split('\t'))[0]).split('/'))[-1] for h in heads]
     print(heads[0:10])
+    heads = set(heads)
     print('heads: ', len(heads))
     objectDet(image_dir, out_dir, heads)
