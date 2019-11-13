@@ -20,8 +20,6 @@ COCO_MODEL_PATH = os.path.join(DATA_DIR, "mask_rcnn_coco.h5")
 if not os.path.exists(COCO_MODEL_PATH):
     utils.download_trained_weights(COCO_MODEL_PATH)
 COCO_DIR = "/data/vbalogh/coco"
-# IMAGE_DIR = os.path.join(ROOT_DIR, "images")
-# SAMPLE_IMAGE_DIR = os.path.join(ROOT_DIR, "data", "head_crops_sample")
 BATCH_SIZE = 1
 
 def chunker(seq, size):
@@ -48,12 +46,9 @@ def objectDet(image_dir, out_dir, heads):
     batch_size = config.BATCH_SIZE
     image_names = os.listdir(image_dir)
     format_name = '.' + (image_names[0].strip().split('.'))[-1]
-    print('format: ', format_name)
     already_done = os.listdir(out_dir)
     already_done = set(['.'.join((name.strip().split('.'))[0:-1]) + format_name for name in already_done])
-    print('already done: ', len(already_done))
     image_names = [ img_name for img_name in image_names if (img_name in heads and img_name not in already_done)]
-    print('images left to detect: ', len(image_names))
     for image_group in chunker(image_names, batch_size):
         images = getImages(image_dir, image_group)
         if images is not None:
@@ -133,7 +128,6 @@ if __name__ == '__main__':
     dataset.load_coco(COCO_DIR, "train")
     dataset.prepare()
     class_names = dataset.class_names
-    print(class_names)
 
     # Detect objects
     image_dir = args.images
@@ -141,7 +135,5 @@ if __name__ == '__main__':
     head_file = args.head
     heads = open(head_file, 'r').readlines()
     heads = [(((h.strip().split('\t'))[0]).split('/'))[-1] for h in heads]
-    print(heads[0:10])
     heads = set(heads)
-    print('heads: ', len(heads))
     objectDet(image_dir, out_dir, heads)
