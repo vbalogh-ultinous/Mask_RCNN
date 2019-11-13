@@ -244,7 +244,7 @@ def finalizeMetrics(cummulated_metrics):
     metrics['matched_object_ratio'] = cummulated_metrics['matched_object_ratio']/float(count)
     return metrics
 
-def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, reference):
+def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, reference=None):
     """
     Align heads with people (bodies)
     :param head_file: csv containing information on head bounding boxes
