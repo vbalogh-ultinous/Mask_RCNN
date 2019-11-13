@@ -48,7 +48,7 @@ def objectDet(image_dir, out_dir, heads):
     batch_size = config.BATCH_SIZE
     image_names = os.listdir(image_dir)
     already_done = os.listdir(out_dir)
-    already_done = ['.'.join((name.strip().split('.'))[0:-1]) + '.jpeg' for name in already_done]
+    already_done = set(['.'.join((name.strip().split('.'))[0:-1]) + '.jpeg' for name in already_done])
     print('already done: ', len(already_done))
     image_names = [ img_name for img_name in image_names if (img_name in heads and img_name not in already_done)]
     print('images left to detect: ', len(image_names))
@@ -138,7 +138,7 @@ if __name__ == '__main__':
     out_dir = args.outdir
     head_file = args.head
     heads = open(head_file, 'r').readlines()
-    heads = [(((h.strip().split('\t'))[0]).split('/'))[-1] for h in heads]
+    heads = set([(((h.strip().split('\t'))[0]).split('/'))[-1] for h in heads])
     print(heads[0:10])
     print('heads: ', len(heads))
     objectDet(image_dir, out_dir, heads)
