@@ -51,6 +51,7 @@ def objectDet(image_dir, out_dir, heads):
     already_done = ['.'.join((name.strip().split('.'))[0:-1]) + '.jpeg' for name in already_done]
     print('already done: ', len(already_done))
     image_names = [ img_name for img_name in image_names if (img_name in heads and img_name not in already_done)]
+    print('images left to detect: ', len(image_names))
     for image_group in chunker(image_names, batch_size):
         images = getImages(image_dir, image_group)
         if images is not None:
@@ -135,7 +136,7 @@ if __name__ == '__main__':
     # Detect objects
     image_dir = args.images
     out_dir = args.outdir
-    head_file = args.heads
+    head_file = args.head
     heads = open(head_file, 'r').readlines()
     heads = [(((h.strip().split('\t'))[0]).split('/'))[-1] for h in heads]
     print(heads[0:10])
