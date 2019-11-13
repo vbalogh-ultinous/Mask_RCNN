@@ -27,10 +27,6 @@ def computeIoU(head_bb, person_bb, epsilon=0.1, threshold=0.7):
         overlap_area = dx * dy
     if computeIoH(overlap_area, headbox_area) > threshold: # TODO max problem instead of min
         result = -overlap_area / (headbox_area + epsilon * person_area)
-    # if np.abs(result) > threshold:
-    #     return result
-    # else:
-    #     return 0
     return result
 
 def computeIoH(overlap, head):
