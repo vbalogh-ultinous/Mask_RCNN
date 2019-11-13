@@ -2,7 +2,6 @@ import numpy as np
 import json
 import os
 import cv2
-import matplotlib.pyplot as plt
 from scipy.spatial.distance import cdist
 from scipy.optimize import linear_sum_assignment
 import argparse
@@ -26,7 +25,7 @@ def computeIoU(head_bb, person_bb, epsilon=0.1, threshold=0.7):
     if dx > 0 and dy > 0: # make sure person and head intersects
         overlap_area = dx * dy
     if computeIoH(overlap_area, headbox_area) > threshold: # TODO max problem instead of min
-        result = -overlap_area / (headbox_area + epsilon * person_area)
+        result = - overlap_area / (headbox_area + epsilon * person_area)
     return result
 
 def computeIoH(overlap, head):
@@ -96,8 +95,6 @@ def drawRectangles(indices, C, head_bbs, person_bbs, image):
     pair_indices = [(ind1, ind2) for ind1, ind2 in zip(indices[0], indices[1])]
     for (row_ind, col_ind) in pair_indices:
         if C[row_ind, col_ind] < 0:
-            print('Matched head: ', row_ind, ', person: ', col_ind)
-            # print('Head: ', row_ind, head_bbs[row_ind], '\nPerson: ', col_ind, person_bbs[col_ind])
             color = generateColor()
             cv2.rectangle(image, (head_bbs[row_ind][0], head_bbs[row_ind][1]),
                           (head_bbs[row_ind][2], head_bbs[row_ind][3]),
@@ -106,19 +103,23 @@ def drawRectangles(indices, C, head_bbs, person_bbs, image):
                           (person_bbs[col_ind][2], person_bbs[col_ind][3]),
                           color, 1)
         else:
-            print('Removed head: ', row_ind, ', person', col_ind)
             (indices[0].tolist()).remove(row_ind)
             (indices[1].tolist()).remove(col_ind)
     for i in getMismatchedIndices(head_bbs, indices[0]):
-        print('Mismatched head: ', i, len(head_bbs), 'bb:', head_bbs[i])
         cv2.rectangle(image, (head_bbs[i][0], head_bbs[i][1]), (head_bbs[i][2], head_bbs[i][3]),
                       (0, 0, 255), 2)
     for i in getMismatchedIndices(person_bbs, indices[1]):
-        print('Mismatched person: ', i)
         cv2.rectangle(image, (person_bbs[i][0], person_bbs[i][1]), (person_bbs[i][2], person_bbs[i][3]),
                       (0, 255, 0), 1)
 
 def getPersonBoundingBoxes(person_dir, filename, swap):
+    """
+    Read and return a list of person bounding boxes from json detections for an image.
+    :param person_dir: directory containing person detections (as json files)
+    :param filename: filename of the specific image
+    :param swap: True if bounding box coordinates are y1, x1, y2, x2 instead of x1, y1, x2, y2
+    :return: list of person bounding boxes
+    """
     json_data = json.load(open(os.path.join(person_dir, filename)))
     detections = []
     if 'detections' in json_data.keys():
@@ -129,23 +130,33 @@ def getPersonBoundingBoxes(person_dir, filename, swap):
     return person_bbs
 
 def getHeadBoundingBoxes(head_file, person_dir, filename):
+    """
+     Read and return a list of head bounding boxes from json detections for an image.
+    :param head_file: csv file containing annotated head bounding boxes
+    :param person_dir: directory containing person detections (as json files)
+    :param filename: filename of the specific image
+    :return: list of head bounding boxes
+    """
     heads = open(head_file, 'r').readlines()
     raw_filename = (person_dir.strip().split('/'))[-1] + '/' + '.'.join((filename.strip().split('.'))[0:-1]) + '.'
-    print('raw: ', raw_filename)
     head_line = [line for line in heads if line.find(raw_filename) != -1]
     if len(head_line) == 0:
         return None
-    # print(raw_filename, head_line, person_bbs)
     head_bbs = []
 
     if len(head_line) > 0:  # and len(person_bbs) > 0:
         head_bbs = (head_line[0].strip().split('\t'))[1:]
         head_bbs = [[int(head_bbs[i]), int(head_bbs[i + 1]), int(head_bbs[i + 2]), int(head_bbs[i + 3])] for i
                     in range(len(head_bbs)) if i % 5 == 0]
-    print('headbbs: ', head_bbs)
     return head_bbs
 
 def computeAlginments(head_bbs, person_bbs):
+    """
+    Compute the head-person matches by solving the assignment problem (Hungarian algorithm)
+    :param head_bbs: list of head bounding boxes
+    :param person_bbs: list of person bounding boxes
+    :return: aligned indices and cost matrix
+    """
     indices = np.array([[], []])
     C = np.zeros([len(head_bbs), len(person_bbs)])
     if len(head_bbs) > 0 and len(person_bbs) > 0:
@@ -153,14 +164,32 @@ def computeAlginments(head_bbs, person_bbs):
         indices = linear_sum_assignment(C)
     return indices, C
 
-def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics):
-    # remove indices from matched indices that have 0 cost, since they are not a real match
+def removeZeroCostIndices(C, aligned_indices):
+    """
+    Remove indices from matched indices that have 0 cost, since they are not a real match.
+    :param C: cost matrix
+    :param aligned_indices: paired indices
+    :return: indices not containing zero cost pairings
+    """
     pair_indices = [(ind1, ind2) for ind1, ind2 in zip(aligned_indices[0], aligned_indices[1])]
     for (row_ind, col_ind) in pair_indices:
         if C[row_ind, col_ind] >= 0:
             (aligned_indices[0].tolist()).remove(row_ind)
             (aligned_indices[1].tolist()).remove(col_ind)
+    return aligned_indices
 
+def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics):
+    """
+    Compute metrics for an alignment of an image that is stored in a dictionary
+    (cummulated_metrics) that is updated step by step.
+    :param C: cost matrix
+    :param aligned_indices: paired indices
+    :param head_bbs: list of head bounding boxes
+    :param person_bbs: list of person bounding boxes
+    :param cummulated_metrics: dictionary containing metrices in a cummulated way (not yet finalized)
+    :return: updated cummulated_metrics
+    """
+    aligned_indices = removeZeroCostIndices(C, aligned_indices)
     mismatched_heads = len(getMismatchedIndices(head_bbs, aligned_indices[0]))
     mismatched_people = len(getMismatchedIndices(person_bbs, aligned_indices[1]))
     heads = len(head_bbs)
@@ -177,7 +206,6 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
         cummulated_metrics['matched_head_ratio'] += matched_head_ratio
         cummulated_metrics['matched_person_ratio'] += matched_person_ratio
         cummulated_metrics['matched_object_ratio'] += matched_objects_ratio
-        print(cost, matched_head_ratio, matched_person_ratio, matched_objects_ratio)
     else:
         if heads > 0 and people > 0:
             cummulated_metrics['cost'] += 0.0
@@ -200,9 +228,12 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
             cummulated_metrics['cost'] += 0.0
             cummulated_metrics['matched_object_ratio'] += 0.0
 
-
-
 def finalizeMetrics(cummulated_metrics):
+    """
+    Compute mean of cummulated metrics
+    :param cummulated_metrics: cummulated metrics not yet taken their mean
+    :return: metrics with mean computed
+    """
     metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0, 'match': 0.0}
     count = cummulated_metrics['count']
     metrics['count'] = count
@@ -214,11 +245,22 @@ def finalizeMetrics(cummulated_metrics):
     return metrics
 
 def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, reference):
+    """
+    Align heads with people (bodies)
+    :param head_file: csv containing information on head bounding boxes
+    :param person_dir: directory containing information on person bounding boxes in json files
+    :param image_dir: directory containing raw images
+    :param out_dir: output directory
+    :param metrics_file: file to output gathered metrics
+    :param name:
+    :param swap: True if person bounding boxes should be treated in a different manner (y1,x1,y2,x2 instead of x1,y1,x2,y2)
+    :param reference: directory containing files on which alignments should be run, if None alignments are run on the whole person_dir
+    :return:
+    """
     file_names = os.listdir(person_dir)
     if reference != None:
         reference_names = set(os.listdir(reference))
         file_names = [file_name for file_name in file_names if file_name in reference_names]
-    print('Reading in files')
     cummulated_metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0, 'match': 0.0}
     for filename in file_names:
         if filename.find('.json') != -1:
