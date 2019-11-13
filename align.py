@@ -260,7 +260,9 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, r
     file_names = os.listdir(person_dir)
     suffix = getSuffix(person_dir)
     heads = open(head_file, 'r').readlines()
-    heads = set([(head.strip().split('.'))[0] for head in heads if head.find(suffix) != -1])
+    heads = [(head.strip().split('.'))[0] for head in heads if head.find(suffix) != -1]
+    print('heads: ', heads[0:10])
+    heads = set(heads)
 
     img_format = '.png'
     if image_dir.find('HollywoodHeads') != -1:
