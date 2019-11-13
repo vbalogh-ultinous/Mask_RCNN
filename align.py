@@ -258,6 +258,12 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, r
     :return:
     """
     file_names = os.listdir(person_dir)
+    suffix = getSuffix(person_dir)
+    heads = open(head_file, 'r').readlines()
+    heads = set([head for head in heads if head.find(suffix) != -1])
+    print('heads: ', len(heads))
+    print('suffix: ', suffix)
+    file_names = [file_name for file_name in file_names if (file_name.strip().split('.'))[0] in heads]
     if reference != None:
         reference_names = set(os.listdir(reference))
         file_names = [file_name for file_name in file_names if file_name in reference_names]
