@@ -44,9 +44,13 @@ def formatOutName(image_name):
     name = '.'.join((image_name.strip().split('.'))[0:-1]) + '.json'
     return name
 
-def objectDet(image_dir, out_dir):
+def objectDet(image_dir, out_dir, heads):
     batch_size = config.BATCH_SIZE
     image_names = os.listdir(image_dir)
+    already_done = os.listdir(out_dir)
+    already_done = ['.'.join((name.strip().split('.'))[0:-1]) + '.jpeg' for name in already_done]
+    print('already done: ', len(already_done))
+    image_names = [ img_name for img_name in image_names if (img_name in heads and img_name not in already_done)]
     for image_group in chunker(image_names, batch_size):
         images = getImages(image_dir, image_group)
         if images is not None:
@@ -88,10 +92,13 @@ def objectDet(image_dir, out_dir):
 def parseArgs(argv=None):
     parser = argparse.ArgumentParser(
         description='MaskRCNN object detector printer')
-    parser.add_argument('--images', default='/data/head_det_corpus_v3/film8', type=str,
+    parser.add_argument('--images', type=str,
                         help='Path to directory containing images', required=True)
     parser.add_argument('--outdir', type=str,
                         help='Path to output directory', required=True)
+    parser.add_argument('--head',  type=str,
+                        help='Path to csv containing head annotations', required=True)
+
     # parser.add_argument('--batchsize', default=2, type=int,
     #                     help='Path to output directory', required=False)
 
@@ -128,4 +135,9 @@ if __name__ == '__main__':
     # Detect objects
     image_dir = args.images
     out_dir = args.outdir
-    objectDet(image_dir, out_dir)
+    head_file = args.heads
+    heads = open(head_file, 'r').readlines()
+    heads = [(((h.strip().split('\t'))[0]).split('/'))[-1] for h in heads]
+    print(heads[0:10])
+    print('heads: ', len(heads))
+    objectDet(image_dir, out_dir, heads)
