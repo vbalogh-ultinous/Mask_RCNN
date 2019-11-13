@@ -261,9 +261,16 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, r
     suffix = getSuffix(person_dir)
     heads = open(head_file, 'r').readlines()
     heads = set([head for head in heads if head.find(suffix) != -1])
+
+    img_format = '.png'
+    if image_dir.find('HollywoodHeads') != -1:
+        img_format = '.jpeg'
+    elif image_dir.find('MPII') != -1:
+        img_format = '.jpg'
+    print('format: ', img_format)
     print('heads: ', len(heads))
     print('suffix: ', suffix)
-    file_names = [file_name for file_name in file_names if (file_name.strip().split('.'))[0] in heads]
+    file_names = [file_name for file_name in file_names if (file_name.strip().split('.'))[0] + img_format in heads]
     print(file_names[0:10])
     if reference != None:
         reference_names = set(os.listdir(reference))
@@ -275,11 +282,7 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, r
             head_bbs = getHeadBoundingBoxes(head_file, person_dir, filename)
             if head_bbs is not None:
                 indices, C = computeAlginments(head_bbs, person_bbs)
-                img_format = '.png'
-                if image_dir.find('HollywoodHeads') != -1:
-                    img_format = '.jpeg'
-                elif image_dir.find('MPII') != -1:
-                    img_format = '.jpg'
+
                 img_filename = '.'.join((filename.strip().split('.'))[0:-1]) + img_format
                 image = cv2.imread(os.path.join(image_dir, img_filename))
                 drawRectangles(indices, C,  head_bbs, person_bbs, image)
