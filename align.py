@@ -172,7 +172,7 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
         matched_person_ratio = (people - mismatched_people) / people
         matched_objects_ratio = len(aligned_indices[0])/ float(len(aligned_indices[0]) + mismatched_people + mismatched_heads)
 
-        cummulated_metrics['match_ratio'] += len(aligned_indices[0])
+        cummulated_metrics['match'] += len(aligned_indices[0])
         cummulated_metrics['cost'] += cost
         cummulated_metrics['matched_head_ratio'] += matched_head_ratio
         cummulated_metrics['matched_person_ratio'] += matched_person_ratio
@@ -203,11 +203,11 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
 
 
 def finalizeMetrics(cummulated_metrics):
-    metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0, 'match_ratio': 0.0}
+    metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0, 'match': 0.0}
     count = cummulated_metrics['count']
     metrics['count'] = count
     metrics['cost'] = cummulated_metrics['cost']/float(count)
-    metrics['match_ratio'] = cummulated_metrics['match_ratio']/float(count)
+    metrics['match'] = cummulated_metrics['match']/float(count)
     metrics['matched_head_ratio'] = cummulated_metrics['matched_head_ratio']/float(count)
     metrics['matched_person_ratio'] = cummulated_metrics['matched_person_ratio']/float(count)
     metrics['matched_object_ratio'] = cummulated_metrics['matched_object_ratio']/float(count)
@@ -219,7 +219,7 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, r
         reference_names = set(os.listdir(reference))
         file_names = [file_name for file_name in file_names if file_name in reference_names]
     print('Reading in files')
-    cummulated_metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0, 'match_ratio': 0.0}
+    cummulated_metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0, 'match': 0.0}
     for filename in file_names:
         if filename.find('.json') != -1:
             person_bbs = getPersonBoundingBoxes(person_dir, filename, swap)
