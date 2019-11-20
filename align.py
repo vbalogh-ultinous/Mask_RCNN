@@ -82,6 +82,10 @@ def getMismatchedIndices(bboxes, aligned_indices):
     """
     return [i for i in range(len(bboxes)) if i not in aligned_indices]
 
+def isCovered(hx1, hy1, hx2, hy2, bx1, by1, bx2, by2):
+    if( hx1 < bx1 or bx2 < hx2 or hy1 < by1 or by2 < hy2):
+        return False
+    return True
 
 def drawRectangles(indices, C, head_bbs, person_bbs, image, image_file_name):
     """
@@ -91,9 +95,11 @@ def drawRectangles(indices, C, head_bbs, person_bbs, image, image_file_name):
     :param head_bbs: head bounding boxes
     :param person_bbs: person bounding boxes
     :param image: image to draw the rectangles on
+    :param image_file_name: path to image
     """
     text = []
     text.append(image_file_name)
+    cover_ratio = 0.0
     pair_indices = [(ind1, ind2) for ind1, ind2 in zip(indices[0], indices[1])]
     for (row_ind, col_ind) in pair_indices:
         if C[row_ind, col_ind] < 0:
@@ -104,25 +110,34 @@ def drawRectangles(indices, C, head_bbs, person_bbs, image, image_file_name):
             cv2.rectangle(image, (person_bbs[col_ind][0], person_bbs[col_ind][1]),
                           (person_bbs[col_ind][2], person_bbs[col_ind][3]),
                           color, 1)
-            indices = '1\t' + str(head_bbs[row_ind][0]) + '\t' + str(head_bbs[row_ind][1]) \
+            indices_text = '1\t' + str(head_bbs[row_ind][0]) + '\t' + str(head_bbs[row_ind][1]) \
                       + '\t' + str(head_bbs[row_ind][2]) + '\t' + str(head_bbs[row_ind][3]) \
                       + '\t' + str(person_bbs[col_ind][0]) + '\t' + str(person_bbs[col_ind][1]) \
                       + '\t' + str(person_bbs[col_ind][2]) + '\t' + str(person_bbs[col_ind][3])
-            text.append(indices)
+            text.append(indices_text)
+            # compute cover ratio
+            if(isCovered(head_bbs[row_ind][0], head_bbs[row_ind][1], head_bbs[row_ind][2], head_bbs[row_ind][3],
+               person_bbs[col_ind][0], person_bbs[col_ind][1], person_bbs[col_ind][2], person_bbs[col_ind][3])):
+                cover_ratio += 1.0
         else:
             (indices[0].tolist()).remove(row_ind)
             (indices[1].tolist()).remove(col_ind)
     for i in getMismatchedIndices(head_bbs, indices[0]):
         cv2.rectangle(image, (head_bbs[i][0], head_bbs[i][1]), (head_bbs[i][2], head_bbs[i][3]),
                       (0, 0, 255), 2)
-        indices = '0\t' + str(head_bbs[i][0]) + '\t' + str(head_bbs[i][1]) \
+        indices_text = '0\t' + str(head_bbs[i][0]) + '\t' + str(head_bbs[i][1]) \
                   + '\t' + str(head_bbs[i][2]) + '\t' + str(head_bbs[i][3])
-        text.append(indices)
+        text.append(indices_text)
     for i in getMismatchedIndices(person_bbs, indices[1]):
         cv2.rectangle(image, (person_bbs[i][0], person_bbs[i][1]), (person_bbs[i][2], person_bbs[i][3]),
                       (0, 255, 0), 1)
-    text = '\t'.join(text)
-    return text
+    text = '\t'.join(text) + '\n'
+
+    if len(pair_indices) > 0:
+        cover_ratio = cover_ratio / len(pair_indices)
+    else:
+        cover_ratio = 1.0
+    return text, cover_ratio
 
 def getPersonBoundingBoxes(person_dir, filename, swap):
     """
@@ -190,7 +205,7 @@ def removeZeroCostIndices(C, aligned_indices):
             (aligned_indices[1].tolist()).remove(col_ind)
     return aligned_indices
 
-def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics):
+def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cover_ratio, cummulated_metrics):
     """
     Compute metrics for an alignment of an image that is stored in a dictionary
     (cummulated_metrics) that is updated step by step.
@@ -207,6 +222,7 @@ def computeMetrics(C, aligned_indices, head_bbs, person_bbs, cummulated_metrics)
     heads = len(head_bbs)
     people = len(person_bbs)
     cummulated_metrics['count'] += 1
+    cummulated_metrics['cover_ratio'] += cover_ratio
     if len(aligned_indices[0]) > 0:
         cost = - C[aligned_indices[0], aligned_indices[1]].sum() / float(len(aligned_indices[0]))
         matched_head_ratio = (heads - mismatched_heads) / heads
@@ -246,9 +262,11 @@ def finalizeMetrics(cummulated_metrics):
     :param cummulated_metrics: cummulated metrics not yet taken their mean
     :return: metrics with mean computed
     """
-    metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0, 'match': 0.0}
+    metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0,
+               'matched_object_ratio': 0.0, 'match': 0.0, 'cover_ratio': 0.0}
     count = cummulated_metrics['count']
     metrics['count'] = count
+    metrics['cover_ratio'] = cummulated_metrics['cover_ratio']/float(count)
     metrics['cost'] = cummulated_metrics['cost']/float(count)
     metrics['match'] = cummulated_metrics['match']/float(count)
     metrics['matched_head_ratio'] = cummulated_metrics['matched_head_ratio']/float(count)
@@ -289,7 +307,8 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, r
     if reference != None:
         reference_names = set(os.listdir(reference))
         file_names = [file_name for file_name in file_names if file_name in reference_names]
-    cummulated_metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0, 'match': 0.0}
+    cummulated_metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0,
+                          'matched_object_ratio': 0.0, 'match': 0.0, 'cover_ratio': 0.0}
     csv_path = suffix + '.csv'
     csv_file = open(csv_path, 'w')
     for filename in file_names:
@@ -301,11 +320,11 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, r
 
                 img_filename = '.'.join((filename.strip().split('.'))[0:-1]) + img_format
                 image = cv2.imread(os.path.join(image_dir, img_filename))
-                csv_text = drawRectangles(indices, C,  head_bbs, person_bbs, image, img_filename)
+                csv_text, cover_ratio = drawRectangles(indices, C,  head_bbs, person_bbs, image, img_filename)
                 csv_file.write(csv_text)
                 print(img_filename, ' --> ', os.path.join(out_dir, img_filename))
                 cv2.imwrite(os.path.join(OUT_DIR, img_filename), image)
-                computeMetrics(C, indices, head_bbs, person_bbs, cummulated_metrics)
+                computeMetrics(C, indices, head_bbs, person_bbs, cover_ratio, cummulated_metrics)
     csv_file.close()
     metrics = finalizeMetrics(cummulated_metrics)
     metrics['name'] = name
