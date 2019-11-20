@@ -83,7 +83,7 @@ def getMismatchedIndices(bboxes, aligned_indices):
     return [i for i in range(len(bboxes)) if i not in aligned_indices]
 
 
-def drawRectangles(indices, C, head_bbs, person_bbs, image):
+def drawRectangles(indices, C, head_bbs, person_bbs, image, image_file_name):
     """
     draw head and body bounding boxes on image
     :param indices: indices of the paired head bounding boxes and body bounding boxes
@@ -92,6 +92,8 @@ def drawRectangles(indices, C, head_bbs, person_bbs, image):
     :param person_bbs: person bounding boxes
     :param image: image to draw the rectangles on
     """
+    text = []
+    text.append(image_file_name)
     pair_indices = [(ind1, ind2) for ind1, ind2 in zip(indices[0], indices[1])]
     for (row_ind, col_ind) in pair_indices:
         if C[row_ind, col_ind] < 0:
@@ -102,15 +104,25 @@ def drawRectangles(indices, C, head_bbs, person_bbs, image):
             cv2.rectangle(image, (person_bbs[col_ind][0], person_bbs[col_ind][1]),
                           (person_bbs[col_ind][2], person_bbs[col_ind][3]),
                           color, 1)
+            indices = '1\t' + str(head_bbs[row_ind][0]) + '\t' + str(head_bbs[row_ind][1]) \
+                      + '\t' + str(head_bbs[row_ind][2]) + '\t' + str(head_bbs[row_ind][3]) \
+                      + '\t' + str(person_bbs[col_ind][0]) + '\t' + str(person_bbs[col_ind][1]) \
+                      + '\t' + str(person_bbs[col_ind][2]) + '\t' + str(person_bbs[col_ind][3])
+            text.append(indices)
         else:
             (indices[0].tolist()).remove(row_ind)
             (indices[1].tolist()).remove(col_ind)
     for i in getMismatchedIndices(head_bbs, indices[0]):
         cv2.rectangle(image, (head_bbs[i][0], head_bbs[i][1]), (head_bbs[i][2], head_bbs[i][3]),
                       (0, 0, 255), 2)
+        indices = '0\t' + str(head_bbs[i][0]) + '\t' + str(head_bbs[i][1]) \
+                  + '\t' + str(head_bbs[i][2]) + '\t' + str(head_bbs[i][3])
+        text.append(indices)
     for i in getMismatchedIndices(person_bbs, indices[1]):
         cv2.rectangle(image, (person_bbs[i][0], person_bbs[i][1]), (person_bbs[i][2], person_bbs[i][3]),
                       (0, 255, 0), 1)
+    text = '\t'.join(text)
+    return text
 
 def getPersonBoundingBoxes(person_dir, filename, swap):
     """
@@ -278,6 +290,8 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, r
         reference_names = set(os.listdir(reference))
         file_names = [file_name for file_name in file_names if file_name in reference_names]
     cummulated_metrics = {'count': 0, 'cost': 0, 'matched_head_ratio': 0.0, 'matched_person_ratio': 0.0, 'matched_object_ratio': 0.0, 'match': 0.0}
+    csv_path = suffix + '.csv'
+    csv_file = open(csv_path, 'w')
     for filename in file_names:
         if filename.find('.json') != -1:
             person_bbs = getPersonBoundingBoxes(person_dir, filename, swap)
@@ -287,10 +301,12 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, r
 
                 img_filename = '.'.join((filename.strip().split('.'))[0:-1]) + img_format
                 image = cv2.imread(os.path.join(image_dir, img_filename))
-                drawRectangles(indices, C,  head_bbs, person_bbs, image)
+                csv_text = drawRectangles(indices, C,  head_bbs, person_bbs, image, img_filename)
+                csv_file.write(csv_text)
                 print(img_filename, ' --> ', os.path.join(out_dir, img_filename))
                 cv2.imwrite(os.path.join(OUT_DIR, img_filename), image)
                 computeMetrics(C, indices, head_bbs, person_bbs, cummulated_metrics)
+    csv_file.close()
     metrics = finalizeMetrics(cummulated_metrics)
     metrics['name'] = name
     with open(metrics_file, 'a+') as f:
