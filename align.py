@@ -320,7 +320,7 @@ def Align(head_file, person_dir, image_dir, out_dir, metrics_file, name, swap, r
 
                 img_filename = '.'.join((filename.strip().split('.'))[0:-1]) + img_format
                 image = cv2.imread(os.path.join(image_dir, img_filename))
-                csv_text, cover_ratio = drawRectangles(indices, C,  head_bbs, person_bbs, image, img_filename)
+                csv_text, cover_ratio = drawRectangles(indices, C,  head_bbs, person_bbs, image, os.path.join(person_dir, img_filename))
                 csv_file.write(csv_text)
                 print(img_filename, ' --> ', os.path.join(out_dir, img_filename))
                 cv2.imwrite(os.path.join(OUT_DIR, img_filename), image)
