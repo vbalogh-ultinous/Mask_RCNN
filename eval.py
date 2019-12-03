@@ -6,6 +6,11 @@ import os
 import sys
 import skimage.io
 import json
+import os
+import tensorflow as tf
+os.environ["CUDA_DEVICE_ORDER"]="PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
+
 
 ROOT_DIR = os.path.abspath(".")
 DATA_DIR = "/data/vbalogh/Mask_RCNN/data"
@@ -43,49 +48,53 @@ def formatOutName(image_name):
     return name
 
 def objectDet(image_dir, out_dir, heads):
-    batch_size = config.BATCH_SIZE
-    image_names = os.listdir(image_dir)
-    format_name = '.' + (image_names[0].strip().split('.'))[-1]
-    already_done = os.listdir(out_dir)
-    already_done = set(['.'.join((name.strip().split('.'))[0:-1]) + format_name for name in already_done])
-    image_names = [ img_name for img_name in image_names if (img_name in heads and img_name not in already_done)]
-    for image_group in chunker(image_names, batch_size):
-        images = getImages(image_dir, image_group)
-        if images is not None:
-            diff = batch_size - len(images)
-            if diff != 0:
-                for k in range(diff):
-                    images.append(images[-1]) # append last image k times
-            results = model.detect(images, verbose=0)
-            assert len(results) == len(images)
+    with tf.device('/device:GPU:0'):
+        #print('image_dir:', image_dir, '\nout_dir:', out_dir, '\nheads:', heads)
+        batch_size = config.BATCH_SIZE
+        image_names = os.listdir(image_dir)
+        format_name = '.' + (image_names[0].strip().split('.'))[-1]
+        already_done = os.listdir(out_dir)
+        already_done = set(['.'.join((name.strip().split('.'))[0:-1]) + format_name for name in already_done])
+        image_names = [ img_name for img_name in image_names if (img_name in heads and img_name not in already_done)]
+        print('need to detect ', len(image_names), ' more images')
+        for image_group in chunker(image_names, batch_size):
+            images = getImages(image_dir, image_group)
+            if images is not None:
+                diff = batch_size - len(images)
+                if diff != 0:
+                    for k in range(diff):
+                        images.append(images[-1]) # append last image k times
+                print('detection')
+                results = model.detect(images, verbose=0)
+                assert len(results) == len(images)
 
-            for i in range((batch_size-diff)): # ith image
-                image_name = image_group[i]
-                json_data = {}
-                result = results[i]
-                json_dets = []
-                class_ids = result['class_ids']
-                bboxes = result['rois']
-                scores = result['scores']
-                image_path = os.path.join(image_name, image_name)
-                for j in range(len(class_ids)): # jth detection
-                    json_det = {}
-                    bbox = [int(x) for x in bboxes[j]]
-                    json_det['bbox'] = [bbox[1], bbox[0], bbox[3], bbox[2]]
-                    json_det['score'] = float(scores[j])
-                    json_det['class'] = class_names[int(class_ids[j])]
-                    json_dets.append(json_det)
-                    # print(json_det)
-                json_data['path'] = image_path
-                json_data['detections'] = json_dets
+                for i in range((batch_size-diff)): # ith image
+                    image_name = image_group[i]
+                    json_data = {}
+                    result = results[i]
+                    json_dets = []
+                    class_ids = result['class_ids']
+                    bboxes = result['rois']
+                    scores = result['scores']
+                    image_path = os.path.join(image_name, image_name)
+                    for j in range(len(class_ids)): # jth detection
+                        json_det = {}
+                        bbox = [int(x) for x in bboxes[j]]
+                        json_det['bbox'] = [bbox[1], bbox[0], bbox[3], bbox[2]]
+                        json_det['score'] = float(scores[j])
+                        json_det['class'] = class_names[int(class_ids[j])]
+                        json_dets.append(json_det)
+                        # print(json_det)
+                    json_data['path'] = image_path
+                    json_data['detections'] = json_dets
 
-                json_out_path = os.path.join(out_dir, formatOutName(image_name))
-                if not os.path.exists(out_dir):
-                    os.makedirs(out_dir)
+                    json_out_path = os.path.join(out_dir, formatOutName(image_name))
+                    if not os.path.exists(out_dir):
+                        os.makedirs(out_dir)
 
-                print("Saving ", image_name, ' --> ', json_out_path)
-                with open(json_out_path, 'w') as f:
-                    json.dump(json_data, f)
+                    print("Saving ", image_name, ' --> ', json_out_path)
+                    with open(json_out_path, 'w') as f:
+                        json.dump(json_data, f)
 
 def parseArgs(argv=None):
     parser = argparse.ArgumentParser(
