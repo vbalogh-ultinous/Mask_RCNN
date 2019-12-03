@@ -39,6 +39,8 @@ def gatherBodyBoxes(path):
 def computeRatios(head_boxes, body_boxes, out_path):
     assert len(head_boxes) == len(body_boxes)
     mean_ratios = np.array([0.0, 0.0, 0.0, 0.0])
+    width_ratios = []
+    height_ratios = []
     denom = 0
     for i in range(len(head_boxes)):
         head_box = head_boxes[i]
@@ -57,24 +59,30 @@ def computeRatios(head_boxes, body_boxes, out_path):
         if h_width <= 0 or h_height <= 0 or b_width <=0 or b_height <= 0:
             continue
 
-        width_ratio = float(h_width) / b_width
-        height_ratio =  float(h_height) / b_height
-        center_x_width_ratio = float(b_ctr_x - h_ctr_x) / b_width
-        center_y_height_ratio =  float(b_ctr_y - h_ctr_y) / b_height
+        width_ratio = b_width / h_width
+        height_ratio = b_height / h_height
+        center_x_width_ratio =  (np.sign(b_ctr_x - h_ctr_x) * float(np.abs(b_ctr_x - h_ctr_x) + 1.0)) / b_width
+        y_width = (np.sign(b_ctr_y - h_ctr_y) * float(np.abs(b_ctr_y - h_ctr_y + 1.0)))
+        if y_width == 0:
+            y_width = 1.0
+        center_y_height_ratio =  b_height / y_width
 
         mean_ratios[0] += width_ratio
         mean_ratios[1] += height_ratio
         mean_ratios[2] += center_x_width_ratio
         mean_ratios[3] += center_y_height_ratio
         denom += 1
-
+        width_ratios.append(width_ratio)
+        height_ratios.append(height_ratio)
     with open(out_path, 'w') as f:
         final_width_ratio = mean_ratios[0] / denom
         final_height_ratio = mean_ratios[1] / denom
         final_ctr_x_ratio = mean_ratios[2] / denom
         final_ctr_y_ratio = mean_ratios[3] / denom
         f.write('width_ratio\theight_ratio\tctr_x_ratio\tctr_y_ratio\n')
+        print((str(final_width_ratio) + '\t' + str(final_height_ratio) + '\t' + str(final_ctr_x_ratio) + '\t' + str(final_ctr_y_ratio) + '\n'))
         f.write((str(final_width_ratio) + '\t' + str(final_height_ratio) + '\t' + str(final_ctr_x_ratio) + '\t' + str(final_ctr_y_ratio) + '\n'))
+    return width_ratios, height_ratios
 
 def parseArgs(argv=None):
     parser = argparse.ArgumentParser(
@@ -93,4 +101,6 @@ if __name__ == '__main__':
     if not os.path.exists(os.path.dirname(out_path)):
         os.makedirs(os.path.dirname(out_path))
     head_boxes, body_boxes = gatherBodyBoxes(args.csv)
-    computeRatios(head_boxes, body_boxes, out_path)
+    width_ratios, height_ratios = computeRatios(head_boxes, body_boxes, out_path)
+    print(np.mean(width_ratios), np.mean(height_ratios))
+
