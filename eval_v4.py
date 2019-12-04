@@ -43,19 +43,27 @@ def getImages(image_dir, image_group):
         return None
     return images
 
-def formatOutName(image_name):
-    name = '.'.join((image_name.strip().split('.'))[0:-1]) + '.json'
+def formatOutName(image_name, out_dir):
+    if out_dir != '':
+        base_image_name = os.path.basename(image_name)
+        name = '.'.join((base_image_name.strip().split('.'))[0:-1]) + '.json'
+        name = os.path.join(out_dir, name)
+    else:
+        name = name = '.'.join((image_name.strip().split('.'))[0:-1]) + '_head_body.json' 
     return name
 
 def objectDet(image_dir, out_dir, heads):
     with tf.device('/device:GPU:0'):
         #print('image_dir:', image_dir, '\nout_dir:', out_dir, '\nheads:', heads)
         batch_size = config.BATCH_SIZE
-        image_names = os.listdir(image_dir)
-        format_name = '.' + (image_names[0].strip().split('.'))[-1]
-        already_done = os.listdir(out_dir)
-        already_done = set(['.'.join((name.strip().split('.'))[0:-1]) + format_name for name in already_done])
-        image_names = [ img_name for img_name in image_names if (img_name in heads and img_name not in already_done)]
+        if image_dir != '':
+            image_names = os.listdir(image_dir)
+            format_name = '.' + (image_names[0].strip().split('.'))[-1]
+            already_done = os.listdir(out_dir)
+            already_done = set(['.'.join((name.strip().split('.'))[0:-1]) + format_name for name in already_done])
+            image_names = [ img_name for img_name in image_names if (img_name in heads and img_name not in already_done)]
+        else:
+            image_names = heads
         print('need to detect ', len(image_names), ' more images')
         for image_group in chunker(image_names, batch_size):
             images = getImages(image_dir, image_group)
@@ -76,7 +84,7 @@ def objectDet(image_dir, out_dir, heads):
                     class_ids = result['class_ids']
                     bboxes = result['rois']
                     scores = result['scores']
-                    image_path = os.path.join(image_name, image_name)
+                    image_path = os.path.join(image_dir, image_name)
                     for j in range(len(class_ids)): # jth detection
                         json_det = {}
                         bbox = [int(x) for x in bboxes[j]]
@@ -88,8 +96,9 @@ def objectDet(image_dir, out_dir, heads):
                     json_data['path'] = image_path
                     json_data['detections'] = json_dets
 
-                    json_out_path = os.path.join(out_dir, formatOutName(image_name))
-                    if not os.path.exists(out_dir):
+                    json_out_path = formatOutName(image_name, out_dir)
+                    print(json_out_path)
+                    if not os.path.exists(out_dir) and out_dir!= '':
                         os.makedirs(out_dir)
 
                     print("Saving ", image_name, ' --> ', json_out_path)
@@ -99,10 +108,10 @@ def objectDet(image_dir, out_dir, heads):
 def parseArgs(argv=None):
     parser = argparse.ArgumentParser(
         description='MaskRCNN object detector printer')
-    parser.add_argument('--images', type=str,
-                        help='Path to directory containing images', required=True)
-    parser.add_argument('--outdir', type=str,
-                        help='Path to output directory', required=True)
+    parser.add_argument('--images', type=str, default='',
+                        help='Path to directory containing images', required=False)
+    parser.add_argument('--outdir', type=str, default= '',
+                        help='Path to output directory', required=False)
     parser.add_argument('--head',  type=str,
                         help='Path to csv containing head annotations', required=True)
 
@@ -143,6 +152,8 @@ if __name__ == '__main__':
     out_dir = args.outdir
     head_file = args.head
     heads = open(head_file, 'r').readlines()
-    heads = [(((h.strip().split('\t'))[0]).split('/'))[-1] for h in heads]
-    heads = set(heads)
+    heads = [(h.strip().split('\t'))[0] for h in heads]
+    #heads = set(heads)
+    print('Heads size: ', len(heads))
+    print('Outdir: ', out_dir)
     objectDet(image_dir, out_dir, heads)
