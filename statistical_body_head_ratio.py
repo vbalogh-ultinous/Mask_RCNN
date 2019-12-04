@@ -4,19 +4,25 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 import argparse
 import os
 import numpy as np
+import cv2 as cv
 
 def gatherBodyBoxes(path):
+    skipped = 0
     file = open(path, 'r')
     body_boxes = []
     head_boxes = []
     lines = file.readlines()
     for line in lines:
-        parts = (line.strip().split('\t'))[1:]
+        parts = (line.strip().split('\t'))
+        img_path = parts[0]
+        parts = parts[1:]
         counter = 0
         hasBody = False
         body_box = np.array([0, 0, 0, 0])
         head_box = np.array([0, 0, 0, 0])
-
+        print('img_path', img_path)
+        image = cv.imread(img_path)
+        height, width, channels = image.shape
         for p in parts:
             if counter in range(1, 5):
                 head_box[(counter-1) % 4] = int(p)
@@ -26,17 +32,22 @@ def gatherBodyBoxes(path):
                 hasBody = True
             if hasBody and counter == 8:
                 # only save body if it has a body
-                body_boxes.append(np.asarray(body_box))
-                head_boxes.append(np.asarray(head_box))
+
+                if body_box[3] < height:
+                    body_boxes.append(np.asarray(body_box))
+                    head_boxes.append(np.asarray(head_box))
+                else:
+                    skipped += 1
+
                 counter = 0
                 continue
             elif counter == 4 and not hasBody:
                 counter = 0
                 continue
             counter += 1
-    return head_boxes, body_boxes
+    return head_boxes, body_boxes, skipped
 
-def computeRatios(head_boxes, body_boxes, out_path):
+def computeRatios(head_boxes, body_boxes, out_path, skipped):
     assert len(head_boxes) == len(body_boxes)
     mean_ratios = np.array([0.0, 0.0, 0.0, 0.0])
     width_ratios = []
@@ -79,15 +90,15 @@ def computeRatios(head_boxes, body_boxes, out_path):
         final_height_ratio = mean_ratios[1] / denom
         final_ctr_x_ratio = mean_ratios[2] / denom
         final_ctr_y_ratio = mean_ratios[3] / denom
-        f.write('width_ratio\theight_ratio\tctr_x_ratio\tctr_y_ratio\n')
-        print((str(final_width_ratio) + '\t' + str(final_height_ratio) + '\t' + str(final_ctr_x_ratio) + '\t' + str(final_ctr_y_ratio) + '\n'))
-        f.write((str(final_width_ratio) + '\t' + str(final_height_ratio) + '\t' + str(final_ctr_x_ratio) + '\t' + str(final_ctr_y_ratio) + '\n'))
+        f.write('width_ratio\theight_ratio\tctr_x_ratio\tctr_y_ratio\tskipped\n')
+        print((str(final_width_ratio) + '\t' + str(final_height_ratio) + '\t' + str(final_ctr_x_ratio) + '\t' + str(final_ctr_y_ratio) + '\t'+  str(skipped) +'\n'))
+        f.write((str(final_width_ratio) + '\t' + str(final_height_ratio) + '\t' + str(final_ctr_x_ratio) + '\t' + str(final_ctr_y_ratio) + '\t'+  str(skipped) +'\n'))
     return width_ratios, height_ratios
 
 def parseArgs(argv=None):
     parser = argparse.ArgumentParser(
         description='Statistical head body ratio')
-    parser.add_argument('--csv', type=str, default='all_train.csv',
+    parser.add_argument('--csv', type=str, default='film1.csv',
                         help='Path to csv file containing head and body bounding boxes', required=False)
     parser.add_argument('--outFile', type=str, default='results/ratio/shbr.txt',
                         help='Path to output file', required=False)
@@ -100,7 +111,7 @@ if __name__ == '__main__':
     out_path = args.outFile
     if not os.path.exists(os.path.dirname(out_path)):
         os.makedirs(os.path.dirname(out_path))
-    head_boxes, body_boxes = gatherBodyBoxes(args.csv)
-    width_ratios, height_ratios = computeRatios(head_boxes, body_boxes, out_path)
-    print(np.mean(width_ratios), np.mean(height_ratios))
+    head_boxes, body_boxes, skipped = gatherBodyBoxes(args.csv)
+    width_ratios, height_ratios = computeRatios(head_boxes, body_boxes, out_path, skipped)
+    print(np.mean(width_ratios), np.mean(height_ratios), skipped)
 
